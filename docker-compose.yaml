@@ -1,0 +1,39 @@
+#!/bin/bash
+
+mkdir backupBotpress
+# Instala o Docker Compose
+sudo apt install docker-compose
+
+# Cria o arquivo nginx.conf
+echo 'server {
+  listen 80;
+  location / {
+    proxy_pass http://botpress:3000;
+  }
+}' > nginx.conf
+
+# Cria o arquivo docker-compose
+echo 'version: "3.8"
+services:
+  botpress:
+    image: botpress/server 
+    ports:
+      - 80:3000
+    restart: on-failure
+    environment:
+      - BOTPRESS_API_PORT=3000
+      - BOTPRESS_ADMIN_PORT=8080
+    volumes:
+      - ./backupBotpress:/botpress/data
+  nginx:
+    image: nginx:1.21
+    ports:
+      - 8080:80
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - botpress
+' > docker-compose.yml
+
+# Inicia o Docker Compose
+docker-compose up -d
